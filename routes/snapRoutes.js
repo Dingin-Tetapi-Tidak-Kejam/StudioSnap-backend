@@ -5,14 +5,15 @@ const {
   addUser,
   updateUser,
   deleteUser,
+  login, 
 } = require("../controllers/snapControllers");
 
 const router = express.Router();
 
-// Users routes
+router.post("/login", login);
+router.post("/register", addUser);
 router.get("/users", getAllUsers);
 router.get("/users/:id", getUserById);
-router.post("/users", addUser);
 router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
 
