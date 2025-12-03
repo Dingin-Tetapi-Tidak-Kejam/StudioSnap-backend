@@ -1,15 +1,12 @@
 const pool = require("../config/db");
 
-// USERS
 async function getAllUsers() {
-  const result = await pool.query("SELECT * FROM users ORDER BY user_id ASC");
+  const result = await pool.query("SELECT * FROM users ORDER BY id ASC");
   return result.rows;
 }
 
 async function getUserById(id) {
-  const result = await pool.query("SELECT * FROM users WHERE user_id = $1", [
-    id,
-  ]);
+  const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
   return result.rows[0];
 }
 
@@ -32,10 +29,7 @@ async function addUser(data) {
 async function updateUser(id, data) {
   const { username, email, password } = data;
   const result = await pool.query(
-    `UPDATE users
-     SET username = $1, email = $2, password = $3
-     WHERE user_id = $4
-     RETURNING *`,
+    `UPDATE users SET username = $1, email = $2, password = $3 WHERE id = $4 RETURNING *`,
     [username, email, password, id]
   );
   return result.rows[0];
@@ -43,8 +37,39 @@ async function updateUser(id, data) {
 
 async function deleteUser(id) {
   const result = await pool.query(
-    "DELETE FROM users WHERE user_id = $1 RETURNING *",
+    "DELETE FROM users WHERE id = $1 RETURNING *",
     [id]
+  );
+  return result.rows[0];
+}
+
+async function startSession(userId, filterUsed) {
+  const result = await pool.query(
+    "INSERT INTO photo_sessions (user_id, date_time_start, filter_used, number_of_photos) VALUES ($1, NOW(), $2, 0) RETURNING *",
+    [userId, filterUsed]
+  );
+  return result.rows[0];
+}
+
+async function endSession(sessionId) {
+  const result = await pool.query(
+    "UPDATE photo_sessions SET date_time_end = NOW() WHERE session_id = $1 RETURNING *",
+    [sessionId]
+  );
+  return result.rows[0];
+}
+
+async function getAllFilters() {
+  const result = await pool.query(
+    "SELECT * FROM filters WHERE is_active = TRUE"
+  );
+  return result.rows;
+}
+
+async function saveFeedback(sessionId, rating, comment) {
+  const result = await pool.query(
+    "INSERT INTO feedback (session_id, rating, comment) VALUES ($1, $2, $3) RETURNING *",
+    [sessionId, rating, comment]
   );
   return result.rows[0];
 }
@@ -56,4 +81,8 @@ module.exports = {
   addUser,
   updateUser,
   deleteUser,
+  startSession,
+  endSession,
+  getAllFilters,
+  saveFeedback,
 };
